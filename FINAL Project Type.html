@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Process Task Selector — EPAM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --blue:#1D6AE5; --blue-light:#EBF2FF; --blue-dark:#1557CC;
+    --text-primary:#111827; --text-secondary:#6B7280; --text-tertiary:#9CA3AF;
+    --border:#E5E7EB; --border-light:#F3F4F6;
+    --bg:#FFFFFF; --bg-soft:#F9FAFB;
+  }
+  body{font-family:'DM Sans',system-ui,sans-serif; font-size:15px; line-height:1.6; color:var(--text-primary); background:var(--bg-soft);}
+  a{color:var(--blue);}
+  button{font-family:inherit;}
+
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:1.1rem 2rem; border-bottom:1px solid var(--border); background:var(--bg);}
+  .brand{display:flex; align-items:center; gap:0.6rem;}
+  .brand-text{font-size:0.95rem; font-weight:700; color:var(--text-primary);}
+
+  /* ============ Step 0: intro ============ */
+  #step0{max-width:560px; margin:4rem auto; padding:0 1.5rem; text-align:center;}
+  #step0 .diamonds{margin-bottom:1.5rem;}
+  #step0 h1{font-size:1.7rem; font-weight:700; letter-spacing:-0.02em; margin-bottom:1rem;}
+  #step0 p{font-size:0.9375rem; color:var(--text-secondary); line-height:1.65; margin-bottom:2rem;}
+  .btn-primary{padding:0.8rem 1.8rem; border-radius:10px; border:none; background:var(--blue); color:#fff; font-size:0.9375rem; font-weight:700; cursor:pointer; transition:background .12s, transform .12s;}
+  .btn-primary:hover{background:var(--blue-dark);}
+  .btn-primary:active{transform:scale(0.98);}
+  .btn-secondary{padding:0.75rem 1.4rem; border-radius:10px; border:1.5px solid var(--border); background:var(--bg); color:var(--text-primary); font-size:0.875rem; font-weight:700; cursor:pointer;}
+  .btn-secondary:hover{border-color:var(--blue); color:var(--blue);}
+
+  /* ============ Steps 1a/1b: question forms ============ */
+  .qscreen{max-width:600px; margin:0 auto; padding:2.25rem 1.5rem 4rem; display:none;}
+  .step-dots{display:flex; justify-content:center; gap:0.35rem; margin-bottom:0.6rem;}
+  .step-dots span{width:7px; height:7px; border-radius:50%; background:var(--border);}
+  .step-dots span.on{background:var(--blue);}
+  .qscreen h1{font-size:1.35rem; font-weight:700; letter-spacing:-0.015em; margin-bottom:0.4rem;}
+  .qscreen p.lead{font-size:0.875rem; color:var(--text-secondary); margin-bottom:1.5rem;}
+  .qcard{background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:1.5rem 1.75rem;}
+  .q-row{padding:0.6rem 0; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;}
+  .q-row:last-child{border-bottom:none;}
+  .q-label{display:flex; align-items:center; gap:0.4rem; font-size:0.82rem; font-weight:600; color:var(--text-primary); flex-shrink:0;}
+  .q-control{flex-shrink:0; margin-left:auto;}
+  /* Segmented controls (3-4 options) need more room than a side-by-side row can guarantee at every width — stack under the label instead of squeezing */
+  .q-row-segmented{flex-wrap:wrap;}
+  .q-row-segmented .segmented{flex:1 1 auto; justify-content:flex-end; min-width:220px;}
+
+  /* Switch: binary factor, pill track, both labels always visible */
+  .switch{display:flex; border-radius:999px; background:var(--border-light); padding:2px; width:220px;}
+  .switch-opt{flex:1; text-align:center; padding:0.32rem 0.5rem; border:none; background:transparent; border-radius:999px; font-size:0.72rem; font-weight:600; color:var(--text-secondary); cursor:pointer; transition:all .15s;}
+  .switch-opt.active{background:var(--blue); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+
+  /* Segmented: 3-4 option factor, compact buttons */
+  .segmented{display:flex; gap:0.28rem; flex-wrap:wrap; max-width:340px; justify-content:flex-end;}
+  .segmented-opt{padding:0.32rem 0.5rem; border-radius:7px; border:1.5px solid var(--border); background:var(--bg); font-size:0.65rem; font-weight:600; color:var(--text-secondary); cursor:pointer; transition:all .12s;}
+  .segmented-opt:hover{border-color:var(--blue);}
+  .segmented-opt.active{background:var(--blue); border-color:var(--blue); color:#fff;}
+
+  .form-nav{margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;}
+
+  /* ============ Step 2: Kanban ============ */
+  #step2{display:none;}
+  .kanban-header{display:flex; align-items:center; justify-content:space-between; padding:1.1rem 2rem; flex-wrap:wrap; gap:1rem; border-bottom:1px solid var(--border); background:var(--bg);}
+  .role-chips{display:flex; gap:0.45rem; flex-wrap:wrap;}
+  .chip{padding:0.35rem 0.85rem; border-radius:999px; border:1.5px solid var(--border); background:var(--bg); font-size:0.78rem; font-weight:600; color:var(--text-secondary); cursor:pointer; transition:all .15s;}
+  .chip.active{background:var(--blue); border-color:var(--blue); color:#fff;}
+  .btn-params{display:flex; align-items:center; gap:0.4rem; padding:0.55rem 1.1rem; border-radius:9px; border:1.5px solid var(--border); background:var(--bg); font-size:0.85rem; font-weight:600; color:var(--text-primary); cursor:pointer;}
+  .btn-params:hover{border-color:var(--blue);}
+
+  .kanban-summary{display:flex; gap:1.5rem; padding:0.85rem 2rem; font-size:0.8125rem; color:var(--text-secondary); border-bottom:1px solid var(--border-light); background:var(--bg-soft);}
+  .kanban-summary b{color:var(--text-primary);}
+
+  .phase-dots{display:none; justify-content:center; gap:0.4rem; padding:0.7rem 0; background:var(--bg-soft); border-bottom:1px solid var(--border-light);}
+  .phase-dots span{width:7px; height:7px; border-radius:50%; background:var(--border); cursor:pointer; transition:width .15s, border-radius .15s;}
+  .phase-dots span.on{background:var(--blue); width:18px; border-radius:4px;}
+
+  .kanban-board{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border);}
+  .kanban-col{background:var(--bg-soft); min-height:60vh; display:flex; flex-direction:column;}
+  .kanban-col-head{padding:1rem 1.1rem 0.7rem; position:sticky; top:0; background:var(--bg-soft); z-index:5;}
+  .phase-title-row{display:flex; align-items:center; gap:0.4rem;}
+  .phase-icon{color:var(--text-secondary); display:flex; align-items:center; flex-shrink:0;}
+  .kanban-col-head h2{font-size:1rem; font-weight:700; color:var(--text-primary); line-height:1.1;}
+  .kanban-col-head span{font-size:0.72rem; color:var(--text-tertiary); margin-left:1.55rem;}
+  .kanban-col-body{padding:0 0.85rem 1.5rem; display:flex; flex-direction:column; gap:0.55rem; overflow-y:auto;}
+
+  .task-card{border:1px solid var(--border); border-radius:10px; padding:0.7rem 0.8rem; background:var(--bg); transition:box-shadow .12s, border-color .12s, opacity .22s ease, max-height .22s ease, margin .22s ease, padding .22s ease; max-height:220px; overflow:hidden;}
+  .task-card:hover{box-shadow:0 2px 10px rgba(0,0,0,0.06); border-color:#D1D5DB;}
+  .task-card .name{display:block; font-size:0.81rem; color:var(--text-primary); text-decoration:none; margin-bottom:0.35rem; line-height:1.4;}
+  .task-card .name:hover{color:var(--blue); text-decoration:underline;}
+  .task-card .meta{display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap;}
+  .ai-tag{font-size:0.64rem; font-weight:600; text-decoration:none; padding:0.1rem 0.45rem 0.1rem 0.32rem; border-radius:999px; background:var(--blue-light); color:var(--blue); display:inline-flex; align-items:center; gap:0.2rem; position:relative;}
+  .role-tags{display:flex; gap:0.26rem; flex-wrap:wrap; margin-top:0.3rem;}
+  .role-tag{font-size:0.58rem; font-weight:600; padding:0.07rem 0.4rem; border-radius:999px; background:var(--border-light); color:var(--text-secondary);}
+
+  .task-card.excluded{opacity:0.42; filter:grayscale(0.4); pointer-events:none;}
+  .task-card.excluded .name{color:var(--text-tertiary);}
+
+  /* Role filter: animated collapse instead of instant display:none, so state changes are always visible */
+  .task-card.role-hidden{opacity:0; max-height:0; margin:0; padding-top:0; padding-bottom:0; border-width:0; pointer-events:none;}
+
+  /* JS-positioned tooltip (fixed to viewport, never clipped by a scrolling column) */
+  #jsTooltip{
+    display:none; position:fixed; z-index:200; background:var(--text-primary); color:#fff;
+    font-size:0.7rem; font-weight:400; line-height:1.4; padding:0.5rem 0.65rem; border-radius:8px;
+    max-width:200px; white-space:normal; box-shadow:0 6px 16px rgba(0,0,0,0.18); pointer-events:none;
+  }
+  #jsTooltip::after{
+    content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:var(--text-primary);
+  }
+  #jsTooltip.flip::after{
+    top:auto; bottom:100%; border-top-color:transparent; border-bottom-color:var(--text-primary);
+  }
+
+  /* ============ Parameters panel ============ */
+  /* Default (4-column view): right-anchored panel, slides in — same visual as the original drawer, but stays an overlay (never pushes content, never closes on outside click) */
+  .modal-overlay{display:none; position:fixed; inset:0; background:rgba(17,24,39,0.45); z-index:40;}
+  .modal-overlay.open{display:block;}
+  .drawer{position:fixed; top:0; right:0; width:420px; max-width:100%; height:100%; background:var(--bg); box-shadow:-8px 0 30px rgba(0,0,0,0.18); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .22s ease;}
+  .modal-overlay.open .drawer{transform:translateX(0);}
+  .drawer-head{display:flex; align-items:center; justify-content:space-between; padding:1.2rem 1.5rem; border-bottom:1px solid var(--border); flex-shrink:0;}
+  .drawer-head h2{font-size:1.05rem; font-weight:700;}
+  .drawer-close{width:32px; height:32px; border-radius:8px; border:none; background:var(--border-light); color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .drawer-close:hover{background:var(--border);}
+  .drawer-body{flex:1; overflow-y:auto; padding:1.1rem 1.5rem; min-height:0;}
+  .drawer-group-label{font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-tertiary); margin:1.1rem 0 0.3rem;}
+  .drawer-group-label:first-child{margin-top:0;}
+  .drawer-foot{padding:1.1rem 1.5rem; border-top:1px solid var(--border); flex-shrink:0;}
+  #drawerForm1a .q-row, #drawerForm1b .q-row{padding:0.6rem 0; gap:0.6rem;}
+  #drawerForm1a .q-label, #drawerForm1b .q-label{font-size:0.76rem;}
+  #drawerForm1a .switch, #drawerForm1b .switch{width:150px; flex-shrink:0;}
+  #drawerForm1a .switch-opt, #drawerForm1b .switch-opt{font-size:0.66rem; padding:0.28rem 0.4rem;}
+  #drawerForm1a .segmented, #drawerForm1b .segmented{max-width:220px; gap:0.22rem; justify-content:flex-end;}
+  #drawerForm1a .segmented-opt, #drawerForm1b .segmented-opt{font-size:0.62rem; padding:0.28rem 0.45rem;}
+  /* Segmented controls (3-4 options) always need more room than the panel's row layout can spare — stack them under the label instead of fighting for space beside it */
+  #drawerForm1a .q-row-segmented, #drawerForm1b .q-row-segmented{flex-direction:column; align-items:flex-start; gap:0.5rem;}
+  #drawerForm1a .q-row-segmented .q-control, #drawerForm1b .q-row-segmented .q-control{margin-left:0;}
+  #drawerForm1a .q-row-segmented .segmented, #drawerForm1b .q-row-segmented .segmented{max-width:100%; justify-content:flex-start;}
+
+  footer.credit{padding:1.5rem 2rem; font-size:0.75rem; color:var(--text-tertiary); text-align:center;}
+  footer.credit a{margin:0 0.3rem;}
+  footer.credit .sep{color:var(--border);}
+
+  /* Kanban swipe mode: phones (any orientation, narrow) + tablets in portrait (any width up to iPad Pro 12.9") */
+  @media (max-width:640px), (max-width:1024px) and (orientation:portrait){
+    .kanban-header{padding:1rem 1.1rem;}
+    .kanban-summary{padding:0.7rem 1.1rem; flex-wrap:wrap; gap:0.7rem;}
+    .kanban-board{display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; gap:0;}
+    .kanban-col{flex:0 0 100%; scroll-snap-align:start; border-bottom:none; min-height:auto;}
+    .phase-dots{display:flex;}
+    /* Parameters mirrors the Kanban's 1-column mode: full-screen, no slide-in, no outside-click dismissal */
+    .drawer{width:100%; max-width:100%; box-shadow:none; transform:translateY(100%); transition:transform .22s ease;}
+    .modal-overlay.open .drawer{transform:translateY(0);}
+  }
+  /* Phone-width only: forms stack, tighter spacing (tablets have room to keep the row layout) */
+  @media (max-width:640px){
+    .topbar{padding:1rem 1.1rem;}
+    #step0{margin:2.5rem auto;}
+    .qscreen{padding:1.5rem 1rem 3.5rem;}
+    .qcard{padding:1.25rem 1.25rem;}
+    .switch-opt, .segmented-opt{min-height:40px;}
+    .q-row{flex-direction:column; align-items:flex-start; gap:0.5rem;}
+    .q-control{margin-left:0;}
+    .switch{width:100%;}
+    .segmented{max-width:100%; justify-content:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <svg width="22" height="18" viewBox="0 0 26 22" aria-hidden="true"><polygon points="1,11 13,1 13,21" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/><polygon points="13,1 25,11 13,21" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/></svg>
+    <div class="brand-text">EPAM DESIGN PROCESS FRAMEWORK</div>
+  </div>
+</div>
+
+<!-- ============ STEP 0: Intro ============ -->
+<div id="step0">
+  <div class="diamonds">
+    <svg width="90" height="42" viewBox="0 0 130 60" aria-hidden="true">
+      <polygon points="5,30 45,5 45,55" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+      <polygon points="45,5 85,30 45,55" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+      <polygon points="45,30 85,5 85,55" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+      <polygon points="85,5 125,30 85,55" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+    </svg>
+  </div>
+  <h1>Scope Your Design Process</h1>
+  <p>Based on the Double Diamond Design Process, this tool scopes 60 tasks across Discover, Define, Develop, and Deliver to what your project actually needs, and <strong>pairs each one with the AI technique that can help you do it</strong>. Answer a few quick questions to see your relevant tasks and how AI fits into your workflow.</p>
+  <button class="btn-primary" id="getStartedBtn">Get Started →</button>
+</div>
+
+<!-- ============ STEP 1a: About your product ============ -->
+<div class="qscreen" id="step1a">
+  <h1>About your product</h1>
+  <p class="lead">These shape which tasks depend on what already exists.</p>
+  <div class="qcard">
+    <div class="step-dots"><span class="on"></span><span></span></div>
+    <div id="form1aContainer"></div>
+  </div>
+  <div class="form-nav">
+    <button class="btn-secondary" id="step1aBackBtn">← Back</button>
+    <button class="btn-primary" id="step1aNextBtn">Next →</button>
+  </div>
+</div>
+
+<!-- ============ STEP 1b: About your team ============ -->
+<div class="qscreen" id="step1b">
+  <h1>About your team</h1>
+  <p class="lead">These shape which tasks fit your team's setup and access.</p>
+  <div class="qcard">
+    <div class="step-dots"><span></span><span class="on"></span></div>
+    <div id="form1bContainer"></div>
+  </div>
+  <div class="form-nav">
+    <button class="btn-secondary" id="step1bBackBtn">← Back</button>
+    <button class="btn-primary" id="seeResultsBtn">See My Results →</button>
+  </div>
+</div>
+
+<!-- ============ STEP 2: Kanban results ============ -->
+<div id="step2">
+  <div class="kanban-header">
+    <div class="role-chips" id="roleChips"></div>
+    <button class="btn-params" id="openParamsBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      Parameters
+    </button>
+  </div>
+  <div class="kanban-summary" id="summary"></div>
+  <div class="phase-dots" id="phaseDots"></div>
+  <div class="kanban-board" id="board"></div>
+  <div id="jsTooltip"></div>
+  <footer class="credit">
+    <a href="https://www.nngroup.com/articles/ten-usability-heuristics/" target="_blank" rel="noopener">10 Usability Heuristics</a>
+    <span class="sep">·</span>
+    <a href="https://www.nngroup.com/articles/ai-ux-getting-started/" target="_blank" rel="noopener">Bibliography: AI for UX: Getting Started</a>
+  </footer>
+</div>
+
+<!-- ============ Parameters modal ============ -->
+<div class="modal-overlay" id="drawerOverlay">
+  <div class="drawer" id="drawer">
+    <div class="drawer-head">
+      <h2>Parameters</h2>
+      <button class="drawer-close" id="drawerCloseBtn" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-group-label">About your product</div>
+      <div id="drawerForm1a"></div>
+      <div class="drawer-group-label">About your team</div>
+      <div id="drawerForm1b"></div>
+    </div>
+    <div class="drawer-foot">
+      <button class="btn-primary" id="applyParamsBtn" style="width:100%">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PHASES = ["Discover","Define","Develop","Deliver"];
+const PHASE_ICONS = {
+  Discover: {svg:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'},
+  Define: {svg:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5" fill="currentColor"/></svg>'},
+  Develop: {svg:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'},
+  Deliver: {svg:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>'}
+};
+const ROLES = ["UX Research","UX","UI"];
+const ROLE_LABELS = {"UX Research":"Research","UX":"UX","UI":"UI"};
+
+const TECH_LINKS = {
+  "Idea Honing": "https://www.nngroup.com/articles/AI-conversation-types/",
+  "Enhance Comprehension": "https://www.nngroup.com/articles/research-with-ai/",
+  "Brainstorm & Generate Ideas": "https://blog.designary.com/p/becoming-an-ai-ready-designer-content?utm_source=publication-search",
+  "AI-Assisted Research Synthesis / Clustering": "https://www.nngroup.com/videos/use-ai-responsibly-in-analysis/",
+  "Vibe Coding — Explorative Prompt": "https://www.nngroup.com/articles/ai-prototyping/",
+  "Vibe Coding — Blueprint Prompt": "https://www.nngroup.com/articles/testing-ai-methodology/",
+  "Vibe Coding — Specific Prompt": "https://www.nngroup.com/articles/vague-prototyping/",
+  "Vibe Coding — Snippet Method": null,
+  "Targeted Design Critique": "https://www.nngroup.com/articles/ai-prototyping/",
+  "Open-Ended Design Critique": "https://www.nngroup.com/articles/testing-ai-methodology/",
+  "AI Accessibility Scanning": "https://www.nngroup.com/articles/accessibility-is-not-enough/",
+  "AI-Assisted Design QA": "https://www.nngroup.com/articles/ai-prototyping/",
+  "Edit & Refine Existing Copy": "https://www.nngroup.com/videos/better-AI-editor/",
+  "Desk Research": "https://www.nngroup.com/articles/research-with-ai/",
+  "AI-Moderated Interviews": "https://www.nngroup.com/articles/ai-interviewers/",
+  "AI Image Generation": "https://www.nngroup.com/articles/ai-articulation-barrier/",
+};
+const TECH_DESC = {
+  "Idea Honing": "AI asks one question at a time to iteratively build a thorough spec — a funneling conversation that narrows an underspecified idea into a clear brief.",
+  "Enhance Comprehension": "AI explains a concept/finding to a specific audience or depth.",
+  "Brainstorm & Generate Ideas": "AI generates, ranks, or rates multiple ideas.",
+  "AI-Assisted Research Synthesis / Clustering": "AI clusters qualitative data into candidate themes; researcher validates rather than building from scratch.",
+  "Vibe Coding — Explorative Prompt": "Layer-1: core context to generate first design directions.",
+  "Vibe Coding — Blueprint Prompt": "Layer-2: structure, flows, key features.",
+  "Vibe Coding — Specific Prompt": "Layer-3: visual/interaction/content spec detail.",
+  "Vibe Coding — Snippet Method": "Scoped diff-only editing on an existing prototype: small context, planned diff, surgical execution.",
+  "Targeted Design Critique": "AI critiques against named heuristics/principles/frameworks.",
+  "Open-Ended Design Critique": "AI gives a fresh, unanchored critique.",
+  "AI Accessibility Scanning": "Dedicated tool scans for WCAG issues; complements manual review.",
+  "AI-Assisted Design QA": "AI compares implementation vs. prototype, flags discrepancies.",
+  "Edit & Refine Existing Copy": "AI shortens, reorders, rephrases, or evaluates already-written copy.",
+  "Desk Research": "AI digests and summarizes existing documents or reports. For digesting existing materials only — never for generating or inferring synthetic user data.",
+  "AI-Moderated Interviews": "AI conducts structured interviews at scale, following a script. Only for screening, product feedback, multilingual interviews, or consistency-focused studies — not exploratory research.",
+  "AI Image Generation": "AI generates new images from a structured prompt: subject/scene, art direction, composition.",
+};
+function aiList(v){ if(!v) return []; return v.split(", ").map(name => ({name, link: TECH_LINKS[name] || null})); }
+
+const TASKS = [
+  {phase:"Discover", name:"Identify Unknowns & Define Research Questions", base:true, team:["UX Research","PO","BA"], nng:{label:"Getting into the Discovery Mindset", url:"https://www.nngroup.com/articles/discovery-mindset/"}, ai:aiList("Idea Honing")},
+  {phase:"Discover", name:"Choose Research Methods", base:true, team:["UX Research","UX"], nng:{label:"When to Use Which User-Experience Research Methods", url:"https://www.nngroup.com/articles/which-ux-research-methods/"}, ai:aiList("Enhance Comprehension")},
+  {phase:"Discover", name:"Review existing research (desk research)", base:true, team:["UX Research","UX"], nng:{label:"Secondary Research in UX", url:"https://www.nngroup.com/articles/secondary-research-in-ux/"}, ai:aiList("Desk Research")},
+  {phase:"Discover", name:"Interview internal stakeholders to surface hidden constraints", base:true, team:["UX Research","PM","BA"], nng:{label:"Stakeholder Interviews 101", url:"https://www.nngroup.com/articles/stakeholder-interviews/"}, ai:aiList(null)},
+  {phase:"Discover", name:"Audit existing design system's components and documentation status", factor:"designSystem", states:{customBuild:"omitted", offShelf:"included", partial:"included", full:"included"}, team:["UI","DEV"], nng:{label:"Design-System Maturity: A 6-Dimension Framework", url:"https://www.nngroup.com/articles/design-system-maturity/"}, ai:aiList("Desk Research")},
+  {phase:"Discover", name:"Pull and analyze existing analytics", factor:"analyticsAccess", states:{yes:"included", no:"omitted"}, team:["UX Research","BA"], nng:{label:"3 Uses for Analytics in User Experience Practice", url:"https://www.nngroup.com/articles/analytics-user-experience/"}, ai:aiList("Desk Research")},
+  {phase:"Discover", name:"Run competitive/comparative usability testing", factor:"greenfield", states:{yes:"omitted", no:"included"}, team:["UX Research","UX"], nng:{label:"Competitive Usability Evaluations", url:"https://www.nngroup.com/articles/competitive-usability-evaluations/"}, ai:aiList("AI-Moderated Interviews")},
+  {phase:"Discover", name:"Recruit and screen participants", factor:"userAccess", states:{yes:"included", no:"omitted"}, team:["UX Research"], nng:{label:"Recruiting and Screening Candidates for User Research Projects", url:"https://www.nngroup.com/articles/recruiting-screening-research-candidates/"}, ai:aiList("AI-Moderated Interviews")},
+  {phase:"Discover", name:"Conduct user interviews", factor:"userAccess", states:{yes:"included", no:"omitted"}, team:["UX Research","UX"], nng:{label:"User Interviews 101", url:"https://www.nngroup.com/articles/user-interviews/"}, ai:aiList(null)},
+  {phase:"Discover", name:"Conduct field or diary studies (if new audience)", factor:"capacity", states:{yes:"included", no:"omitted"}, team:["UX Research"], nng:{label:"Diary Studies: Understanding Long-Term User Behavior", url:"https://www.nngroup.com/articles/diary-studies/"}, ai:aiList(null)},
+  {phase:"Discover", name:"Collect Self-Reported Feedback", factor:"userAccess", states:{yes:"included", no:"omitted"}, team:["UX Research"], nng:{label:"Should You Run a Survey?", url:"https://www.nngroup.com/articles/should-you-run-a-survey/"}, ai:aiList("Brainstorm & Generate Ideas")},
+  {phase:"Discover", name:"Audit research materials for wording bias", base:true, team:["UX Research","UX"], nng:{label:"Writing Good Survey Questions: 10 Best Practices", url:"https://www.nngroup.com/articles/survey-best-practices/"}, ai:aiList("Edit & Refine Existing Copy")},
+  {phase:"Discover", name:"Track open unknowns on a shared research board/repository", base:true, team:["UX Research","PM"], nng:{label:"Research Repositories for Tracking UX Research", url:"https://www.nngroup.com/articles/research-repositories/"}, ai:aiList(null)},
+  {phase:"Discover", name:"Share findings with the team asynchronously", base:true, team:["UX Research","UX"], nng:{label:"Creating Engaging Reports & Asynchronous Presentations", url:"https://www.nngroup.com/articles/engaging-reports-presentations/"}, ai:aiList("Enhance Comprehension")},
+  {phase:"Discover", name:"Synthesize Findings into Affinity Map", factor:"userAccess", states:{yes:"included", no:"omitted"}, team:["UX Research","UX"], nng:{label:"Affinity Diagramming", url:"https://www.nngroup.com/articles/affinity-diagram/"}, ai:aiList("AI-Assisted Research Synthesis / Clustering")},
+  {phase:"Discover", name:"Present Discovery Findings", base:true, team:["UX Research","UX","PM","Business"], nng:{label:"Turning Complex Data into Compelling Stories", url:"https://www.nngroup.com/articles/complex-data-compelling-stories/"}, ai:aiList("Enhance Comprehension")},
+
+  {phase:"Define", name:"Write & Refine Problem Statement", base:true, team:["UX","BA","PO"], nng:{label:"Problem Statements in UX Discovery", url:"https://www.nngroup.com/articles/problem-statements/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Map stakeholder attitudes and decide engagement approach", base:true, team:["PM","UX","Business"], nng:{label:"Stakeholder Analysis for UX Projects", url:"https://www.nngroup.com/articles/stakeholder-analysis/"}, ai:aiList(null)},
+  {phase:"Define", name:"Formulate hypotheses for the proposed direction", base:true, team:["UX","UX Research","PO"], nng:{label:"Research Goals, Questions, and Hypotheses", url:"https://www.nngroup.com/videos/research-goals-questions-hypotheses/"}, ai:aiList("Brainstorm & Generate Ideas")},
+  {phase:"Define", name:"Define or update design principles for the project", base:true, team:["UX","UI","PM"], nng:{label:"Design Principles to Support Better Decision Making", url:"https://www.nngroup.com/articles/design-principles/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Build personas from research findings", factor:"userAccess", states:{yes:"included", no:"omitted"}, team:["UX Research","UX"], nng:{label:"Personas: Study Guide", url:"https://www.nngroup.com/articles/personas-study-guide/"}, ai:aiList("AI-Assisted Research Synthesis / Clustering")},
+  {phase:"Define", name:"Build Journey Map", factor:"sequential", states:{sequential:"included", nonSequential:"omitted", both:"included"}, team:["UX","UX Research","BA"], nng:{label:"Journey Mapping 101", url:"https://www.nngroup.com/articles/journey-mapping-101/"}, ai:aiList("AI-Assisted Research Synthesis / Clustering")},
+  {phase:"Define", name:"Build Flow Diagram", base:true, team:["UX","UX Research","BA"], nng:{label:"User Journeys vs. User Flows", url:"https://www.nngroup.com/articles/user-journeys-vs-user-flows/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Create a storyboard", factor:"capacity", states:{yes:"included", no:"omitted"}, team:["UX","UX Research","BA"], nng:{label:"Storyboards Help Visualize UX Ideas", url:"https://www.nngroup.com/articles/storyboards-visualize-ideas/"}, ai:aiList("AI Image Generation")},
+  {phase:"Define", name:"Define information architecture / sitemap", team:["UX","UX Research","BA","DEV"], nng:{label:"Information Architecture vs. Sitemaps: What's the Difference?", url:"https://www.nngroup.com/articles/information-architecture-sitemaps/"}, ai:aiList(null),
+    compute:(a)=> (a.sequential === "sequential" || a.greenfield === "no") ? "omitted" : "included"},
+  {phase:"Define", name:"Create a service blueprint", factor:"ownership", states:{designer:"omitted", pmba:"included"}, team:["BA","PM","UX","UX Research"], nng:{label:"Service Blueprints: Definition", url:"https://www.nngroup.com/articles/service-blueprints-definition/"}, ai:aiList(null)},
+  {phase:"Define", name:"Create a story map", factor:"ownership", states:{designer:"included", pmba:"omitted"}, team:["UX","PO","DEV","BA"], nng:{label:"Mapping User Stories in Agile", url:"https://www.nngroup.com/articles/user-story-mapping/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Audit for UX Debt (existing product)", factor:"greenfield", states:{yes:"omitted", no:"included"}, team:["UX","DEV"], nng:{label:"UX Debt: How to Identify, Prioritize, and Resolve", url:"https://www.nngroup.com/articles/ux-debt/"}, ai:aiList("Targeted Design Critique")},
+  {phase:"Define", name:"Document UX Debt", factor:"greenfield", states:{yes:"omitted", no:"included"}, team:["UX","PO","BA"], nng:{label:"UX Debt: How to Identify, Prioritize, and Resolve", url:"https://www.nngroup.com/articles/ux-debt/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Audit Flows for Dark Patterns", base:true, team:["UX","Business","PM","BA"], nng:{label:"Deceptive Patterns in UX: How to Recognize and Avoid Them", url:"https://www.nngroup.com/articles/deceptive-patterns/"}, ai:aiList("Targeted Design Critique, AI Accessibility Scanning")},
+  {phase:"Define", name:"Build Prioritization Matrix", factor:"ownership", states:{designer:"included", pmba:"omitted"}, team:["PO","UX","PM","Business"], nng:{label:"5 Prioritization Methods in UX Roadmapping", url:"https://www.nngroup.com/articles/prioritization-methods/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Estimate Business Impact", base:true, team:["BA","PM","Business"], nng:{label:"Stop Reporting UX Activity and Report Business Outcomes", url:"https://www.nngroup.com/articles/reporting-ux-business-outcomes/"}, ai:aiList(null)},
+  {phase:"Define", name:"Define Success Metrics", base:true, team:["UX","PM","Business"], nng:{label:"Translating UX Goals into Analytics Measurement Plans", url:"https://www.nngroup.com/articles/ux-goals-analytics/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Define MVP Scope", base:true, team:["PO","UX","PM","Business"], nng:{label:"Minimum Viable Product (MVP): Definition", url:"https://www.nngroup.com/articles/mvp-definition/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Write user stories for UX/UI or related", base:true, team:["PO","BA","UX","DEV"], nng:{label:"Accounting for UX Work with User Stories in Agile Projects", url:"https://www.nngroup.com/articles/ux-user-stories/"}, ai:aiList("Idea Honing")},
+  {phase:"Define", name:"Estimate UX effort for user stories", factor:"agile", states:{agile:"included", waterfall:"omitted"}, team:["UX","DEV","PO"], nng:{label:"Incorporating UX Work into Your Agile Backlog", url:"https://www.nngroup.com/articles/ux-agile-backlog/"}, ai:aiList(null)},
+  {phase:"Define", name:"Present problem framing and proposed scope", base:true, team:["UX","PM","Business","PO"], nng:{label:"Turning Complex Data into Compelling Stories", url:"https://www.nngroup.com/articles/complex-data-compelling-stories/"}, ai:aiList("Enhance Comprehension")},
+
+  {phase:"Develop", name:"Ideate multiple design directions before settling on one", base:true, team:["UX","UI"], nng:{label:"Ideation for Everyday Design Challenges", url:"https://www.nngroup.com/articles/ux-ideation/"}, ai:aiList("Vibe Coding — Explorative Prompt")},
+  {phase:"Develop", name:"Facilitate a collaborative sketching session (design charrette)", base:true, team:["UX","DEV","PO","BA","Business"], nng:{label:"Design Charrettes & Team Sketching", url:"https://www.nngroup.com/articles/design-charrettes/"}, ai:aiList(null)},
+  {phase:"Develop", name:"Compare Design Alternatives", base:true, team:["UX","UX Research"], nng:{label:"Parallel & Iterative Design + Competitive Testing", url:"https://www.nngroup.com/articles/parallel-and-iterative-design/"}, ai:aiList("Vibe Coding — Explorative Prompt")},
+  {phase:"Develop", name:"Build Low/High-Fidelity Prototype", base:true, team:["UX","UI"], nng:{label:"UX Prototypes: Low Fidelity vs. High Fidelity", url:"https://www.nngroup.com/articles/ux-prototype-hi-lo-fidelity/"}, ai:aiList("Vibe Coding — Blueprint Prompt")},
+  {phase:"Develop", name:"Build or extend design system components as needed", factor:"designSystem", states:{customBuild:"included", offShelf:"omitted", partial:"included", full:"omitted"}, team:["UI","DEV"], nng:{label:"Design Systems 101", url:"https://www.nngroup.com/articles/design-systems-101/"}, ai:aiList("Vibe Coding — Specific Prompt, Vibe Coding — Snippet Method")},
+  {phase:"Develop", name:"Write UI microcopy", base:true, team:["UX","UI"], nng:{label:"The 3 I's of Microcopy: Inform, Influence, and Interact", url:"https://www.nngroup.com/articles/3-is-of-microcopy/"}, ai:aiList("Brainstorm & Generate Ideas, Edit & Refine Existing Copy")},
+  {phase:"Develop", name:"Run iterative usability testing on prototypes, updating as issues surface", base:true, team:["UX","UX Research"], nng:{label:"Case Study: Iterative Design and Prototype Testing", url:"https://www.nngroup.com/articles/case-study-iterative-design-prototyping/"}, ai:aiList("Vibe Coding — Snippet Method")},
+  {phase:"Develop", name:"Conduct a heuristic evaluation of work-in-progress designs", factor:"capacity", states:{yes:"included", no:"omitted"}, team:["UX"], nng:{label:"How to Conduct a Heuristic Evaluation", url:"https://www.nngroup.com/articles/how-to-conduct-a-heuristic-evaluation/"}, ai:aiList("Targeted Design Critique")},
+  {phase:"Develop", name:"Review designs for accessibility", factor:"designSystem", states:{customBuild:"included", offShelf:"omitted", partial:"omitted", full:"omitted"}, team:["UX","UI","DEV","QA"], nng:{label:"Accessibility Is Not Enough", url:"https://www.nngroup.com/articles/accessibility-is-not-enough/"}, ai:aiList("AI Accessibility Scanning")},
+  {phase:"Develop", name:"Review visuals for inclusive representation", base:true, team:["UX","UI"], nng:{label:"Inclusive Design", url:"https://www.nngroup.com/articles/inclusive-design/"}, ai:aiList("Targeted Design Critique")},
+  {phase:"Develop", name:"Run a design critique with the team", base:true, team:["UX","UI","DEV","PO"], nng:{label:"Derailed Design Critiques: Tactics for Getting Back on Track", url:"https://www.nngroup.com/articles/derailed-design-critiques/"}, ai:aiList("Open-Ended Design Critique")},
+  {phase:"Develop", name:"Create design specs and align on technical feasibility with developers", base:true, team:["UX","UI","DEV"], nng:{label:"Creating Design Specs for Development", url:"https://www.nngroup.com/articles/creating-design-specs-for-development/"}, ai:aiList("Vibe Coding — Specific Prompt")},
+  {phase:"Develop", name:"Run an A/B test on a specific design variation (if applicable)", factor:"capacity", states:{yes:"included", no:"omitted"}, team:["UX","UX Research","DEV","BA"], nng:{label:"A/B Testing 101", url:"https://www.nngroup.com/articles/ab-testing/"}, ai:aiList("Idea Honing, Brainstorm & Generate Ideas, Vibe Coding — Snippet Method")},
+  {phase:"Develop", name:"Benchmark your proposed solution against competitors before launch", factor:"capacity", states:{yes:"included", no:"omitted"}, team:["UX","UX Research"], nng:{label:"7 Steps to Benchmark Your Product's UX", url:"https://www.nngroup.com/articles/product-ux-benchmarks/"}, ai:aiList("AI-Moderated Interviews")},
+  {phase:"Develop", name:"Share work-in-progress with the team early and often", base:true, team:["UX","DEV","PO","PM"], nng:{label:"Weekly UX Progress Reports", url:"https://www.nngroup.com/videos/ux-progress-reports/"}, ai:aiList("Idea Honing")},
+
+  {phase:"Deliver", name:"Support Release Ceremonies", base:true, team:["UX","DEV","PO","PM"], nng:{label:"UX Responsibilities in Scrum Events", url:"https://www.nngroup.com/articles/ux-scrum/"}, ai:aiList(null)},
+  {phase:"Deliver", name:"Conduct final design QA comparing the built product to the design spec", base:true, team:["UI","DEV","QA"], nng:{label:"QA (Quality Assurance) & UX", url:"https://www.nngroup.com/articles/quality-assurance-ux/"}, ai:aiList("AI-Assisted Design QA")},
+  {phase:"Deliver", name:"Release the design, then pull post-launch analytics to validate outcome", factor:"analyticsAccess", states:{yes:"included", no:"omitted"}, team:["DEV","BA","PM","UX Research"], nng:{label:"3 Uses for Analytics in User Experience Practice", url:"https://www.nngroup.com/articles/analytics-user-experience/"}, ai:aiList("Desk Research")},
+  {phase:"Deliver", name:"Benchmark the live product against competitors", factor:"environmentAccess", states:{yes:"included", no:"omitted"}, team:["UX Research","UX"], nng:{label:"Usability (User) Testing 101", url:"https://www.nngroup.com/articles/usability-testing-101/"}, ai:aiList("AI-Moderated Interviews")},
+  {phase:"Deliver", name:"Conduct Release Postmortem", factor:"capacity", states:{yes:"included", no:"omitted"}, team:["UX","PM","PO","Business"], nng:{label:"Project Postmortems for UX Teams", url:"https://www.nngroup.com/articles/ux-postmortems/"}, ai:aiList("Idea Honing")},
+  {phase:"Deliver", name:"Document Remaining UX Debt", factor:"agile", states:{agile:"included", waterfall:"omitted"}, team:["UX","DEV","PO"], nng:{label:"UX Debt: How to Identify, Prioritize, and Resolve", url:"https://www.nngroup.com/articles/ux-debt/"}, ai:aiList("Idea Honing")},
+  {phase:"Deliver", name:"Update design system documentation to reflect what shipped", base:true, team:["UI","DEV"], nng:{label:"Design-System Maturity: A 6-Dimension Framework", url:"https://www.nngroup.com/articles/design-system-maturity/"}, ai:aiList("Idea Honing")},
+  {phase:"Deliver", name:"Report release outcomes and business impact to stakeholders", base:true, team:["UX","PM","Business"], nng:{label:"Stop Reporting UX Activity and Report Business Outcomes", url:"https://www.nngroup.com/articles/reporting-ux-business-outcomes/"}, ai:aiList("Enhance Comprehension")},
+];
+
+// FACTORS: group "product" -> Step 1a, group "team" -> Step 1b
+const FACTORS = [
+  {key:"greenfield", type:1, group:"product", label:"Product Status", kind:"switch", opts:[{v:"yes",l:"New"},{v:"no",l:"Existing"}], def:"no"},
+  {key:"designSystem", type:1, group:"product", label:"Design System", kind:"segmented", opts:[{v:"customBuild",l:"Build DS from Scratch"},{v:"offShelf",l:"Use Pre-fabricated DS"},{v:"partial",l:"DS In Progress"},{v:"full",l:"Fully Running DS"}], def:"partial"},
+  {key:"analyticsAccess", type:1, group:"product", label:"Analytics Access", kind:"switch", opts:[{v:"no",l:"No"},{v:"yes",l:"Yes"}], def:"yes"},
+  {key:"environmentAccess", type:1, group:"product", label:"Environment Access", kind:"switch", opts:[{v:"no",l:"No"},{v:"yes",l:"Yes"}], def:"yes"},
+  {key:"agile", type:1, group:"product", label:"Methodology", kind:"switch", opts:[{v:"waterfall",l:"Waterfall"},{v:"agile",l:"Agile"}], def:"agile"},
+
+  {key:"capacity", type:3, group:"team", label:"Team Capacity", kind:"switch", opts:[{v:"no",l:"Busy"},{v:"yes",l:"Has Room"}], def:"yes"},
+  {key:"userAccess", type:1, group:"team", label:"User Access", kind:"switch", opts:[{v:"no",l:"No"},{v:"yes",l:"Yes"}], def:"yes"},
+  {key:"ownership", type:1, group:"team", label:"PM and/or BA Involved?", kind:"switch", opts:[{v:"designer",l:"No"},{v:"pmba",l:"Yes"}], def:"designer"},
+  {key:"sequential", type:2, group:"team", label:"Navigation Type", kind:"segmented", opts:[{v:"sequential",l:"Step-by-Step"},{v:"nonSequential",l:"Free Navigation"},{v:"both",l:"Both"}], def:"sequential"},
+];
+
+let answers = {};
+let draftAnswers = {};
+FACTORS.forEach(f => { answers[f.key] = f.def; draftAnswers[f.key] = f.def; });
+let activeRoles = new Set();
+
+function renderForm(container, group, answersObj){
+  container.innerHTML = "";
+  FACTORS.filter(f => !group || f.group === group).forEach(f => {
+    const row = document.createElement("div");
+    row.className = "q-row" + (f.kind === "segmented" ? " q-row-segmented" : "");
+    const controlClass = f.kind === "switch" ? "switch" : "segmented";
+    row.innerHTML = '<div class="q-label">' + f.label + '</div><div class="q-control ' + controlClass + '" data-factor="' + f.key + '"></div>';
+    const optRow = row.querySelector("." + controlClass);
+    f.opts.forEach(o => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = (f.kind === "switch" ? "switch-opt" : "segmented-opt") + (answersObj[f.key] === o.v ? " active" : "");
+      btn.textContent = o.l;
+      btn.addEventListener("click", () => {
+        answersObj[f.key] = o.v;
+        optRow.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+      optRow.appendChild(btn);
+    });
+    container.appendChild(row);
+  });
+}
+
+// Initial render of step1a/1b forms
+renderForm(document.getElementById("form1aContainer"), "product", draftAnswers);
+renderForm(document.getElementById("form1bContainer"), "team", draftAnswers);
+
+// ---- Navigation ----
+const SCREENS = ["step0", "step1a", "step1b", "step2"];
+function showScreen(id){
+  SCREENS.forEach(s => { document.getElementById(s).style.display = (s === id ? "block" : "none"); });
+}
+document.getElementById("getStartedBtn").addEventListener("click", () => showScreen("step1a"));
+document.getElementById("step1aBackBtn").addEventListener("click", () => showScreen("step0"));
+document.getElementById("step1aNextBtn").addEventListener("click", () => showScreen("step1b"));
+document.getElementById("step1bBackBtn").addEventListener("click", () => showScreen("step1a"));
+document.getElementById("seeResultsBtn").addEventListener("click", () => {
+  answers = Object.assign({}, draftAnswers);
+  showScreen("step2");
+  renderKanban();
+});
+
+// ---- Role chips ----
+const roleChipsEl = document.getElementById("roleChips");
+ROLES.forEach(role => {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "chip";
+  chip.textContent = ROLE_LABELS[role];
+  chip.addEventListener("click", () => {
+    if(activeRoles.has(role)){ activeRoles.delete(role); chip.classList.remove("active"); }
+    else { activeRoles.add(role); chip.classList.add("active"); }
+    applyRoleFilter();
+  });
+  roleChipsEl.appendChild(chip);
+});
+function applyRoleFilter(){
+  document.querySelectorAll(".task-card").forEach(card => {
+    const roles = card.dataset.roles.split("|");
+    const hidden = activeRoles.size > 0 && !roles.some(r => activeRoles.has(r));
+    card.classList.toggle("role-hidden", hidden);
+  });
+}
+
+// ---- Parameters modal ----
+const drawerOverlay = document.getElementById("drawerOverlay");
+document.getElementById("openParamsBtn").addEventListener("click", () => {
+  draftAnswers = Object.assign({}, answers);
+  renderForm(document.getElementById("drawerForm1a"), "product", draftAnswers);
+  renderForm(document.getElementById("drawerForm1b"), "team", draftAnswers);
+  drawerOverlay.classList.add("open");
+});
+function closeDrawer(){
+  drawerOverlay.classList.remove("open");
+}
+document.getElementById("drawerCloseBtn").addEventListener("click", closeDrawer);
+document.getElementById("applyParamsBtn").addEventListener("click", () => {
+  answers = Object.assign({}, draftAnswers);
+  closeDrawer();
+  renderKanban();
+});
+
+// ---- Task state + Kanban render ----
+function taskState(t){
+  if(t.compute) return t.compute(answers);
+  if(t.base) return "included";
+  return t.states[answers[t.factor]] || "included";
+}
+
+const AI_ICON = '<svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z"/></svg>';
+
+function taskCardHtml(t){
+  let meta = "";
+  t.ai.forEach(a => {
+    const tip = TECH_DESC[a.name] ? ' data-tooltip="' + TECH_DESC[a.name].replace(/"/g,"&quot;") + '"' : "";
+    if(a.link) meta += '<a class="ai-tag" href="' + a.link + '" target="_blank" rel="noopener"' + tip + '>' + AI_ICON + a.name + '</a>';
+    else meta += '<span class="ai-tag" tabindex="0"' + tip + '>' + AI_ICON + a.name + '</span>';
+  });
+  const roles = '<div class="role-tags">' + t.team.map(r => '<span class="role-tag">' + r + '</span>').join("") + '</div>';
+  const cls = "task-card" + (t.state === "omitted" ? " excluded" : "");
+  return '<div class="' + cls + '" data-roles="' + t.team.join("|") + '">' +
+    '<a class="name" href="' + t.nng.url + '" target="_blank" rel="noopener">' + t.name + '</a>' +
+    (meta ? '<div class="meta">' + meta + '</div>' : '') + roles + '</div>';
+}
+
+// ---- JS-positioned tooltip (fixed to viewport, immune to column scroll-clipping) ----
+const jsTooltip = document.getElementById("jsTooltip");
+function showTooltip(target){
+  const text = target.getAttribute("data-tooltip");
+  if(!text) return;
+  jsTooltip.textContent = text;
+  jsTooltip.style.display = "block";
+  jsTooltip.classList.remove("flip");
+  const rect = target.getBoundingClientRect();
+  const tw = jsTooltip.offsetWidth;
+  const th = jsTooltip.offsetHeight;
+  let left = rect.left + rect.width / 2 - tw / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+  jsTooltip.style.left = left + "px";
+  let top = rect.top - th - 10;
+  if(top < 8){
+    top = rect.bottom + 10;
+    jsTooltip.classList.add("flip");
+  }
+  jsTooltip.style.top = top + "px";
+}
+function hideTooltip(){ jsTooltip.style.display = "none"; }
+const board = document.getElementById("board");
+board.addEventListener("mouseover", (e) => {
+  const t = e.target.closest("[data-tooltip]");
+  if(t) showTooltip(t);
+});
+board.addEventListener("mouseout", (e) => {
+  const t = e.target.closest("[data-tooltip]");
+  if(t) hideTooltip();
+});
+board.addEventListener("focusin", (e) => {
+  const t = e.target.closest("[data-tooltip]");
+  if(t) showTooltip(t);
+});
+board.addEventListener("focusout", (e) => {
+  const t = e.target.closest("[data-tooltip]");
+  if(t) hideTooltip();
+});
+
+function renderKanban(){
+  const withState = TASKS.map(t => Object.assign({}, t, {state: taskState(t)}));
+  const included = withState.filter(t => t.state === "included").length;
+  const omitted = withState.filter(t => t.state === "omitted").length;
+  document.getElementById("summary").innerHTML =
+    '<span><b>' + included + '</b> suggested</span><span><b>' + omitted + '</b> not applicable</span><span><b>' + withState.length + '</b> total</span>';
+
+  board.innerHTML = "";
+  PHASES.forEach(phase => {
+    const col = document.createElement("div");
+    col.className = "kanban-col";
+    const phaseTasks = withState.filter(t => t.phase === phase)
+      .sort((a, b) => (a.state === "omitted" ? 1 : 0) - (b.state === "omitted" ? 1 : 0));
+    const icon = PHASE_ICONS[phase];
+    col.innerHTML = '<div class="kanban-col-head"><div class="phase-title-row"><span class="phase-icon">' + icon.svg + '</span><h2>' + phase + '</h2></div><span>' + phaseTasks.length + ' tasks</span></div>' +
+      '<div class="kanban-col-body">' + phaseTasks.map(taskCardHtml).join("") + '</div>';
+    board.appendChild(col);
+  });
+  applyRoleFilter();
+  setupPhaseDots();
+}
+
+// ---- Mobile swipe: phase-dots indicator, synced with the horizontally-scrolling board ----
+function setupPhaseDots(){
+  const dotsEl = document.getElementById("phaseDots");
+  dotsEl.innerHTML = "";
+  PHASES.forEach((phase, i) => {
+    const dot = document.createElement("span");
+    dot.className = i === 0 ? "on" : "";
+    dot.setAttribute("aria-label", phase);
+    dot.addEventListener("click", () => {
+      const col = board.children[i];
+      if(col) board.scrollTo({ left: col.offsetLeft, behavior: "smooth" });
+    });
+    dotsEl.appendChild(dot);
+  });
+}
+let dotsScrollTicking = false;
+board.addEventListener("scroll", () => {
+  if(dotsScrollTicking) return;
+  dotsScrollTicking = true;
+  requestAnimationFrame(() => {
+    const idx = Math.round(board.scrollLeft / (board.clientWidth || 1));
+    document.querySelectorAll("#phaseDots span").forEach((d, i) => d.classList.toggle("on", i === idx));
+    dotsScrollTicking = false;
+  });
+});
+</script>
+</body>
+</html>
